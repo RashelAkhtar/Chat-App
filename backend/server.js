@@ -10,7 +10,13 @@ const PORT = process.env.PORT;
 const FRONTEND_PORT = process.env.FRONTEND_PORT;
 
 const app = express();
-app.use(cors());
+app.use(
+  cors({
+    origin: FRONTEND_PORT,
+    methods: ["GET", "POST"],
+    credentials: true,
+  })
+);
 
 // Creates an HTTP server based on our Express app
 const server = createServer(app);
@@ -20,6 +26,7 @@ const io = new Server(server, {
   cors: {
     origin: FRONTEND_PORT, // which frontend are allowed
     methods: ["GET", "POST"], // which HTTP methods are allowed
+    credentials: true,
   },
 });
 
