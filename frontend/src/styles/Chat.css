@@ -1,0 +1,179 @@
+/* Wrapper */
+.chat-wrapper {
+  display: flex;
+  height: 100vh;
+  background: #0b0b0b;
+  color: #eaeaea;
+  font-family: Arial, sans-serif;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 25%;
+  background: #121212;
+  border-right: 1px solid #2a2a2a;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+}
+
+.sidebar-title {
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+  color: #bbb;
+}
+
+.sidebar-user {
+  padding: 0.8rem;
+  margin-bottom: 0.5rem;
+  border-radius: 8px;
+  background: #1a1a1a;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.sidebar-user:hover {
+  background: #2a2a2a;
+}
+
+.sidebar-user.active {
+  background: #333;
+  color: #fff;
+}
+
+.sidebar-subtitle {
+  font-size: 0.9rem;
+  margin: 1rem 0 0.5rem;
+  color: #999;
+}
+
+/* Chat Main */
+.chat-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-header {
+  background: #1c1c1c;
+  padding: 1rem;
+  font-size: 1.1rem;
+  border-bottom: 1px solid #2a2a2a;
+  color: #ddd;
+}
+
+.chat-messages {
+  flex: 1;
+  padding: 1rem;
+  overflow-y: auto;
+  background: #0f0f0f;
+}
+
+/* Messages */
+.message {
+  max-width: 60%;
+  margin-bottom: 1rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: 10px;
+  position: relative;
+  font-size: 0.9rem;
+}
+
+.my-msg {
+  background: #202020;
+  margin-left: auto;
+  text-align: right;
+}
+
+.other-msg {
+  background: #2b2b2b;
+  margin-right: auto;
+}
+
+.msg-user {
+  font-size: 0.75rem;
+  font-weight: bold;
+  color: #aaa;
+}
+
+.msg-text {
+  margin: 0.2rem 0;
+  color: #fff;
+}
+
+.msg-time {
+  font-size: 0.7rem;
+  color: #888;
+}
+
+/* Input */
+.chat-input-box {
+  display: flex;
+  padding: 0.8rem;
+  background: #1c1c1c;
+  border-top: 1px solid #2a2a2a;
+}
+
+.chat-input {
+  flex: 1;
+  padding: 0.6rem;
+  border-radius: 6px;
+  border: none;
+  background: #2a2a2a;
+  color: #fff;
+  outline: none;
+}
+
+.chat-send {
+  margin-left: 0.5rem;
+  padding: 0.6rem 1rem;
+  border: none;
+  border-radius: 6px;
+  background: #444;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.chat-send:hover {
+  background: #555;
+}
+
+/* Auth Screen */
+.auth-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background: #0b0b0b;
+  color: #fff;
+}
+
+.auth-title {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.auth-input {
+  padding: 0.8rem;
+  border: none;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  width: 250px;
+  background: #1a1a1a;
+  color: #fff;
+}
+
+.auth-button {
+  padding: 0.8rem 1.2rem;
+  border: none;
+  border-radius: 6px;
+  background: #444;
+  color: #fff;
+  cursor: pointer;
+}
+
+.auth-button:hover {
+  background: #555;
+}
