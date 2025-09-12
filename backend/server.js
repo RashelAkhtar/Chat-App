@@ -1,54 +1,61 @@
 import express from "express";
-import { Server } from "socket.io"; // this create a WebSocket Live server
-import { createServer } from "http"; // We use it to wrap Express so that both HTTP and WebSocket requests go through the same server.
+import { Server } from "socket.io";
+import { createServer } from "http";
 import cors from "cors";
 import dotenv from "dotenv";
 
 dotenv.config();
 
-const PORT = process.env.PORT;
-const FRONTEND_PORT = process.env.FRONTEND_PORT;
+const PORT = process.env.PORT || 3000;
+const FRONTEND_URLS = (process.env.FRONTEND_URLS || "").split(",");
 
 const app = express();
+
+// Allow multiple frontend URLs
 app.use(
   cors({
-    origin: FRONTEND_PORT,
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true); // allow local tools
+      if (FRONTEND_URLS.includes(origin) || origin.endsWith(".vercel.app")) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     methods: ["GET", "POST"],
     credentials: true,
   })
 );
 
-// Creates an HTTP server based on our Express app
 const server = createServer(app);
 
-// create a new Socket.IO server and bind it to our HTTP server
 const io = new Server(server, {
   cors: {
-    origin: FRONTEND_PORT, // which frontend are allowed
-    methods: ["GET", "POST"], // which HTTP methods are allowed
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      if (FRONTEND_URLS.includes(origin) || origin.endsWith(".vercel.app")) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    methods: ["GET", "POST"],
     credentials: true,
   },
 });
 
-// Stores active users (id -> username)
+// User storage
 const users = {};
 
-//Fired when a new client connects to the server
-//The callback gives us a socket object representing that specific client
 io.on("connection", (socket) => {
   console.log("User connected: ", socket.id);
 
-  // Save username when client sets it
   socket.on("setUsername", (username) => {
     socket.username = username || "Anonymous";
     users[socket.id] = socket.username;
-    console.log(`User ${socket.id} set username: ${socket.username}`);
-
-    // Send updated user list to everyone
     io.emit("userList", users);
   });
 
-  // When a client sends a message
   socket.on("chatMessage", (msg) => {
     const timestamp = new Date().toLocaleTimeString([], {
       hour: "2-digit",
@@ -63,14 +70,12 @@ io.on("connection", (socket) => {
     });
   });
 
-  // Handle private messages
   socket.on("privateMessage", ({ to, text }) => {
     const timestamp = new Date().toLocaleTimeString([], {
       hour: "2-digit",
       minute: "2-digit",
     });
 
-    // Send only to target user
     socket.to(to).emit("privateMessage", {
       from: socket.id,
       user: socket.username,
@@ -78,7 +83,6 @@ io.on("connection", (socket) => {
       time: timestamp,
     });
 
-    // Also send back to sender (so they see their own message)
     socket.emit("privateMessage", {
       from: socket.id,
       user: socket.username,
@@ -88,12 +92,11 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", () => {
-    console.log("User disconnected: ", socket.id);
     delete users[socket.id];
     io.emit("userList", users);
   });
 });
 
-server.listen(3000, () =>
-  console.log(`Server running on http://localhost:${PORT}`)
+server.listen(PORT, () =>
+  console.log(`✅ Server running on http://localhost:${PORT}`)
 );
