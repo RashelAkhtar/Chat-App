@@ -9,14 +9,22 @@ dotenv.config();
 const PORT = process.env.PORT || 3000;
 const FRONTEND_URLS = (process.env.FRONTEND_URLS || "").split(",");
 
+// Normalize function removes trailing slashes
+const normalize = (url) => url?.replace(/\/$/, "");
+const allowedOrigins = FRONTEND_URLS.map(normalize);
+
 const app = express();
 
-// Allow multiple frontend URLs
+// --- Express CORS ---
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin) return callback(null, true); // allow local tools
-      if (FRONTEND_URLS.includes(origin) || origin.endsWith(".vercel.app")) {
+      if (!origin) return callback(null, true);
+      const cleanOrigin = normalize(origin);
+      if (
+        allowedOrigins.includes(cleanOrigin) ||
+        cleanOrigin.endsWith(".vercel.app")
+      ) {
         callback(null, true);
       } else {
         callback(new Error("Not allowed by CORS"));
@@ -29,11 +37,16 @@ app.use(
 
 const server = createServer(app);
 
+// --- Socket.IO CORS ---
 const io = new Server(server, {
   cors: {
     origin: (origin, callback) => {
       if (!origin) return callback(null, true);
-      if (FRONTEND_URLS.includes(origin) || origin.endsWith(".vercel.app")) {
+      const cleanOrigin = normalize(origin);
+      if (
+        allowedOrigins.includes(cleanOrigin) ||
+        cleanOrigin.endsWith(".vercel.app")
+      ) {
         callback(null, true);
       } else {
         callback(new Error("Not allowed by CORS"));
@@ -44,11 +57,11 @@ const io = new Server(server, {
   },
 });
 
-// User storage
+// --- User storage ---
 const users = {};
 
 io.on("connection", (socket) => {
-  console.log("User connected: ", socket.id);
+  console.log("✅ User connected:", socket.id);
 
   socket.on("setUsername", (username) => {
     socket.username = username || "Anonymous";
@@ -76,6 +89,7 @@ io.on("connection", (socket) => {
       minute: "2-digit",
     });
 
+    // send to target
     socket.to(to).emit("privateMessage", {
       from: socket.id,
       user: socket.username,
@@ -83,6 +97,7 @@ io.on("connection", (socket) => {
       time: timestamp,
     });
 
+    // send back to sender
     socket.emit("privateMessage", {
       from: socket.id,
       user: socket.username,
@@ -92,11 +107,12 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", () => {
+    console.log("❌ User disconnected:", socket.id);
     delete users[socket.id];
     io.emit("userList", users);
   });
 });
 
-server.listen(PORT, () =>
-  console.log(`✅ Server running on http://localhost:${PORT}`)
-);
+server.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});
