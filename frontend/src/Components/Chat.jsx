@@ -72,8 +72,17 @@ const Chat = () => {
       <h2>Public Chat (Users Only)</h2>
       <div className="chat-box">
         {publicMsgs.map((m, i) => (
-          <div key={i}>
-            <b>{m.user}:</b> {m.text} <span>({m.time})</span>
+          <div
+            key={i}
+            className={`message ${
+              m.user === username ? "my-msg" : "other-msg"
+            }`}
+          >
+            <div>
+              <b>{m.user}</b>
+            </div>
+            <div>{m.text}</div>
+            <div className="meta">{m.time}</div>
           </div>
         ))}
       </div>
@@ -83,8 +92,17 @@ const Chat = () => {
           <h2>Private Chat with Therapist</h2>
           <div className="chat-box">
             {privateMsgs.map((m, i) => (
-              <div key={i}>
-                <b>{m.user}:</b> {m.text} <span>({m.time})</span>
+              <div
+                key={i}
+                className={`message ${
+                  m.user === username ? "my-msg" : "other-msg"
+                }`}
+              >
+                <div>
+                  <b>{m.user}</b>
+                </div>
+                <div>{m.text}</div>
+                <div className="meta">{m.time}</div>
               </div>
             ))}
           </div>
