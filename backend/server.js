@@ -57,30 +57,41 @@ const io = new Server(server, {
   },
 });
 
-// --- User storage ---
-const users = {};
+// --- Storage ---
+const users = {}; // { socketId: { username, role } }
+const pairs = {}; // { userId: therapistId }
+
+function assignTherapist(userId) {
+  const therapist = Object.entries(users).find(
+    ([, u]) => u.role === "therapist"
+  );
+  if (therapist) {
+    pairs[userId] = therapist[0];
+    io.to(userId).emit("assignedPartner", {
+      partnerId: therapist[0],
+      partnerName: therapist[1].username,
+    });
+    io.to(therapist[0]).emit("assignedPartner", {
+      partnerId: userId,
+      partnerName: users[userId].username,
+    });
+  }
+}
 
 io.on("connection", (socket) => {
   console.log("✅ User connected:", socket.id);
 
-  socket.on("setUsername", (username) => {
+  socket.on("setUser", ({ username, role }) => {
     socket.username = username || "Anonymous";
-    users[socket.id] = socket.username;
+    socket.role = role || "user";
+    users[socket.id] = { username: socket.username, role: socket.role };
+
+    // Assign therapist if user
+    if (role === "user") {
+      assignTherapist(socket.id);
+    }
+
     io.emit("userList", users);
-  });
-
-  socket.on("chatMessage", (msg) => {
-    const timestamp = new Date().toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-
-    io.emit("chatMessage", {
-      id: socket.id,
-      user: socket.username || "Anonymous",
-      text: msg,
-      time: timestamp,
-    });
   });
 
   socket.on("privateMessage", ({ to, text }) => {
@@ -89,7 +100,17 @@ io.on("connection", (socket) => {
       minute: "2-digit",
     });
 
-    // send to target
+    // Security: only allow messaging between pairs
+    const therapistId = pairs[socket.id];
+    const userId = Object.keys(pairs).find((uid) => pairs[uid] === socket.id);
+
+    let allowed = false;
+    if (therapistId && therapistId === to) allowed = true; // user → therapist
+    if (userId && userId === to) allowed = true; // therapist → user
+
+    if (!allowed) return;
+
+    // Send to target
     socket.to(to).emit("privateMessage", {
       from: socket.id,
       user: socket.username,
@@ -97,7 +118,7 @@ io.on("connection", (socket) => {
       time: timestamp,
     });
 
-    // send back to sender
+    // Echo back to sender
     socket.emit("privateMessage", {
       from: socket.id,
       user: socket.username,
@@ -109,6 +130,15 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {
     console.log("❌ User disconnected:", socket.id);
     delete users[socket.id];
+
+    // Remove pair
+    if (pairs[socket.id]) {
+      delete pairs[socket.id];
+    } else {
+      const userId = Object.keys(pairs).find((uid) => pairs[uid] === socket.id);
+      if (userId) delete pairs[userId];
+    }
+
     io.emit("userList", users);
   });
 });
