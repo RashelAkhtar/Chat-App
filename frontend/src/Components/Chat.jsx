@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import { io } from "socket.io-client";
 import "../styles/Chat.css";
 
-const socket = io("http://localhost:3000");
+const API = import.meta.env.VITE_API_URL;
+const socket = io(`${API}`);
 
 const Chat = () => {
   const [username, setUsername] = useState("");
@@ -76,6 +77,7 @@ const Chat = () => {
           </div>
         ))}
       </div>
+
       {role === "user" && (
         <>
           <h2>Private Chat with Therapist</h2>
@@ -88,6 +90,7 @@ const Chat = () => {
           </div>
         </>
       )}
+
       {role === "therapist" && partner && (
         <>
           <h2>Private Chat with {partner.name}</h2>
@@ -100,13 +103,14 @@ const Chat = () => {
           </div>
         </>
       )}
+
       <div className="input-box">
         <input
           value={msg}
           onChange={(e) => setMsg(e.target.value)}
           placeholder="Type a message"
         />
-        <button onClick={sendPublic}>Send Public</button>
+        {role === "user" && <button onClick={sendPublic}>Send Public</button>}
         {partner && <button onClick={sendPrivate}>Send Private</button>}
       </div>
     </div>
