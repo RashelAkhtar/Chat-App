@@ -2,128 +2,112 @@ import React, { useState, useEffect } from "react";
 import { io } from "socket.io-client";
 import "../styles/Chat.css";
 
-const API = import.meta.env.VITE_API_URL;
-const socket = io(`${API}`);
+const socket = io("http://localhost:3000");
 
 const Chat = () => {
-  const [messages, setMessages] = useState([]);
-  const [msg, setMsg] = useState("");
-  const [myId, setMyId] = useState("");
   const [username, setUsername] = useState("");
-  const [role, setRole] = useState("");
-  const [isSet, setIsSet] = useState(false);
+  const [role, setRole] = useState("user");
+  const [loggedIn, setLoggedIn] = useState(false);
+
+  const [publicMsgs, setPublicMsgs] = useState([]);
+  const [privateMsgs, setPrivateMsgs] = useState([]);
+  const [msg, setMsg] = useState("");
+
   const [partner, setPartner] = useState(null);
 
+  const login = () => {
+    if (!username) return;
+    socket.emit("setUser", { username, role });
+    setLoggedIn(true);
+  };
+
   useEffect(() => {
-    socket.on("connect", () => {
-      setMyId(socket.id);
-    });
-
-    socket.on("assignedPartner", (data) => {
-      setPartner(data);
-    });
-
-    socket.on("privateMessage", (data) => {
-      setMessages((prev) => [...prev, data]);
+    socket.on("publicMessage", (m) => setPublicMsgs((p) => [...p, m]));
+    socket.on("privateMessage", (m) => setPrivateMsgs((p) => [...p, m]));
+    socket.on("assignedPartner", ({ partnerId, partnerName }) => {
+      setPartner({ id: partnerId, name: partnerName });
     });
 
     return () => {
-      socket.off("connect");
-      socket.off("assignedPartner");
+      socket.off("publicMessage");
       socket.off("privateMessage");
+      socket.off("assignedPartner");
     };
   }, []);
 
-  const sendMessage = () => {
-    if (msg.trim() && partner) {
-      socket.emit("privateMessage", { to: partner.partnerId, text: msg });
-
-      // Add to local messages (already echoed back, but safer)
-      const myMsg = {
-        from: myId,
-        user: username,
-        text: msg,
-        time: new Date().toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-      };
-      setMessages((prev) => [...prev, myMsg]);
+  const sendPublic = () => {
+    if (msg.trim()) {
+      socket.emit("publicMessage", msg);
       setMsg("");
     }
   };
 
-  const setUser = () => {
-    if (username.trim() && role) {
-      socket.emit("setUser", { username, role });
-      setIsSet(true);
+  const sendPrivate = () => {
+    if (msg.trim() && partner) {
+      socket.emit("privateMessage", { to: partner.id, text: msg });
+      setMsg("");
     }
   };
 
-  if (!isSet) {
+  if (!loggedIn) {
     return (
-      <div className="auth-container">
-        <h2 className="auth-title">Join Chat</h2>
+      <div className="login">
         <input
-          className="auth-input"
+          placeholder="Enter your name"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
-          placeholder="Your name..."
         />
-        <select
-          className="auth-select"
-          value={role}
-          onChange={(e) => setRole(e.target.value)}
-        >
-          <option value="">Select Role</option>
+        <select value={role} onChange={(e) => setRole(e.target.value)}>
           <option value="user">User</option>
           <option value="therapist">Therapist</option>
         </select>
-        <button className="auth-button" onClick={setUser}>
-          Join
-        </button>
-      </div>
-    );
-  }
-
-  if (!partner) {
-    return (
-      <div className="waiting">
-        <h3>⏳ Waiting for a therapist...</h3>
+        <button onClick={login}>Join</button>
       </div>
     );
   }
 
   return (
-    <div className="chat-wrapper">
-      <div className="chat-main">
-        <div className="chat-header">Chat with {partner.partnerName}</div>
-
-        <div className="chat-messages">
-          {messages.map((m, i) => (
-            <div
-              key={i}
-              className={`message ${m.from === myId ? "my-msg" : "other-msg"}`}
-            >
-              <div className="msg-user">{m.user}</div>
-              <div className="msg-text">{m.text}</div>
-              <div className="msg-time">{m.time}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Input */}
-        <div className="chat-input-box">
-          <input
-            className="chat-input"
-            value={msg}
-            onChange={(e) => setMsg(e.target.value)}
-            placeholder="Type a message..."
-          />
-          <button className="chat-send" onClick={sendMessage}>
-            Send
-          </button>
-        </div>
+    <div className="chat-container">
+      <h2>Public Chat (Users Only)</h2>
+      <div className="chat-box">
+        {publicMsgs.map((m, i) => (
+          <div key={i}>
+            <b>{m.user}:</b> {m.text} <span>({m.time})</span>
+          </div>
+        ))}
+      </div>
+      {role === "user" && (
+        <>
+          <h2>Private Chat with Therapist</h2>
+          <div className="chat-box">
+            {privateMsgs.map((m, i) => (
+              <div key={i}>
+                <b>{m.user}:</b> {m.text} <span>({m.time})</span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+      {role === "therapist" && partner && (
+        <>
+          <h2>Private Chat with {partner.name}</h2>
+          <div className="chat-box">
+            {privateMsgs.map((m, i) => (
+              <div key={i}>
+                <b>{m.user}:</b> {m.text} <span>({m.time})</span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+      <div className="input-box">
+        <input
+          value={msg}
+          onChange={(e) => setMsg(e.target.value)}
+          placeholder="Type a message"
+        />
+        <button onClick={sendPublic}>Send Public</button>
+        {partner && <button onClick={sendPrivate}>Send Private</button>}
       </div>
     </div>
   );
