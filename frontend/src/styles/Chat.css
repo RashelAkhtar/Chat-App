@@ -134,3 +134,165 @@
 .login button:hover {
   background: #43a047;
 }
+
+.chat-wrapper {
+  display: flex;
+  height: 100vh;
+  background: #ece5dd;
+  font-family: "Segoe UI", sans-serif;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 25%;
+  background: #fff;
+  border-right: 1px solid #ddd;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-header {
+  padding: 15px;
+  background: #ededed;
+  font-weight: bold;
+  border-bottom: 1px solid #ddd;
+}
+
+.sidebar-user {
+  padding: 12px 15px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.sidebar-user:hover,
+.sidebar-user.active {
+  background: #f5f5f5;
+}
+
+/* Chat main */
+.chat-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-header {
+  padding: 15px;
+  background: #ededed;
+  font-weight: bold;
+  border-bottom: 1px solid #ddd;
+}
+
+.chat-messages {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #e5ddd5;
+}
+
+/* Message bubble */
+.message {
+  max-width: 60%;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.4;
+  position: relative;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+}
+
+.my-msg {
+  align-self: flex-end;
+  background: #dcf8c6;
+  border-bottom-right-radius: 0;
+}
+
+.other-msg {
+  align-self: flex-start;
+  background: #fff;
+  border-bottom-left-radius: 0;
+}
+
+.msg-user {
+  font-weight: bold;
+  font-size: 12px;
+  margin-bottom: 2px;
+  color: #555;
+}
+
+.msg-time {
+  font-size: 11px;
+  color: #888;
+  margin-top: 3px;
+  text-align: right;
+}
+
+/* Input */
+.chat-input-box {
+  display: flex;
+  padding: 10px;
+  background: #f0f0f0;
+  border-top: 1px solid #ddd;
+}
+
+.chat-input {
+  flex: 1;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 20px;
+  outline: none;
+}
+
+.chat-send {
+  margin-left: 10px;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 20px;
+  background: #25d366;
+  color: #fff;
+  cursor: pointer;
+}
+
+.chat-send:hover {
+  background: #20c65a;
+}
+
+/* Login */
+.auth-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background: #ece5dd;
+}
+
+.auth-title {
+  font-size: 20px;
+  margin-bottom: 15px;
+}
+
+.auth-input,
+.auth-select {
+  padding: 10px;
+  width: 250px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
+
+.auth-button {
+  padding: 10px 20px;
+  border: none;
+  background: #25d366;
+  color: #fff;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.auth-button:hover {
+  background: #20c65a;
+}

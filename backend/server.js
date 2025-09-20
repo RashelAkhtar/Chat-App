@@ -62,19 +62,17 @@ const pairs = {}; // { userId: therapistId }
 io.on("connection", (socket) => {
   console.log("✅ Connected:", socket.id);
 
-  // Register user/therapist
   socket.on("setUser", ({ username, role }) => {
     socket.username = username || "Anonymous";
     socket.role = role || "user";
     users[socket.id] = { username: socket.username, role: socket.role };
 
-    // If role = user → auto assign therapist
     if (role === "user") {
       const availableTherapist = Object.entries(users).find(
         ([, u]) => u.role === "therapist"
       );
       if (availableTherapist) {
-        pairs[socket.id] = availableTherapist[0]; // assign
+        pairs[socket.id] = availableTherapist[0];
         io.to(socket.id).emit("assignedPartner", {
           partnerId: availableTherapist[0],
           partnerName: availableTherapist[1].username,
@@ -85,13 +83,11 @@ io.on("connection", (socket) => {
         });
       }
     }
-
-    io.emit("userList", users);
   });
 
-  // 🔹 Public chat (users only)
+  // user-only public chat
   socket.on("publicMessage", (text) => {
-    if (socket.role !== "user") return; // block therapists
+    if (socket.role !== "user") return;
     const msg = {
       user: socket.username,
       text,
@@ -103,7 +99,7 @@ io.on("connection", (socket) => {
     io.emit("publicMessage", msg);
   });
 
-  // 🔹 Private chat (user ↔ therapist pair)
+  // private chat (paired)
   socket.on("privateMessage", ({ to, text }) => {
     const timestamp = new Date().toLocaleTimeString([], {
       hour: "2-digit",
@@ -118,7 +114,6 @@ io.on("connection", (socket) => {
     if (userId && userId === to) allowed = true;
     if (!allowed) return;
 
-    // send to partner
     socket.to(to).emit("privateMessage", {
       from: socket.id,
       user: socket.username,
@@ -126,7 +121,6 @@ io.on("connection", (socket) => {
       time: timestamp,
     });
 
-    // also reflect back to sender
     socket.emit("privateMessage", {
       from: socket.id,
       user: socket.username,
@@ -139,10 +133,9 @@ io.on("connection", (socket) => {
     console.log("❌ Disconnected:", socket.id);
     delete users[socket.id];
     delete pairs[socket.id];
-    io.emit("userList", users);
   });
 });
 
-server.listen(3000, () => {
-  console.log("🚀 Server running on http://localhost:3000");
+server.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
 });
