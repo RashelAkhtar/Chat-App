@@ -88,23 +88,19 @@ io.on("connection", (socket) => {
   // user-only public chat
   socket.on("publicMessage", (text) => {
     if (socket.role !== "user") return;
+
     const msg = {
       user: socket.username,
       text,
-      time: new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
+      time: new Date().toISOString(), // ✅ send ISO timestamp
     };
+
     io.emit("publicMessage", msg);
   });
 
   // private chat (paired)
   socket.on("privateMessage", ({ to, text }) => {
-    const timestamp = new Date().toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    const isoTime = new Date().toISOString(); // ✅ ISO timestamp
 
     const therapistId = pairs[socket.id];
     const userId = Object.keys(pairs).find((uid) => pairs[uid] === socket.id);
@@ -114,19 +110,15 @@ io.on("connection", (socket) => {
     if (userId && userId === to) allowed = true;
     if (!allowed) return;
 
-    socket.to(to).emit("privateMessage", {
+    const msg = {
       from: socket.id,
       user: socket.username,
       text,
-      time: timestamp,
-    });
+      time: isoTime,
+    };
 
-    socket.emit("privateMessage", {
-      from: socket.id,
-      user: socket.username,
-      text,
-      time: timestamp,
-    });
+    socket.to(to).emit("privateMessage", msg);
+    socket.emit("privateMessage", msg);
   });
 
   socket.on("disconnect", () => {

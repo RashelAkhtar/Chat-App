@@ -16,15 +16,79 @@ const Chat = () => {
 
   const [partner, setPartner] = useState(null);
 
+  // --- Login ---
   const login = () => {
-    if (!username) return;
+    if (!username.trim()) return;
     socket.emit("setUser", { username, role });
     setLoggedIn(true);
+
+    // Save to localStorage
+    localStorage.setItem("chatUser", JSON.stringify({ username, role }));
   };
 
+  const logout = () => {
+    localStorage.clear();
+    setLoggedIn(false);
+    setUsername("");
+    setRole("user");
+    setPublicMsgs([]);
+    setPrivateMsgs([]);
+    setPartner(null);
+  };
+
+  // --- Load saved data on first mount ---
   useEffect(() => {
-    socket.on("publicMessage", (m) => setPublicMsgs((p) => [...p, m]));
-    socket.on("privateMessage", (m) => setPrivateMsgs((p) => [...p, m]));
+    const savedUser = localStorage.getItem("chatUser");
+    if (savedUser) {
+      const { username, role } = JSON.parse(savedUser);
+      setUsername(username);
+      setRole(role);
+      setLoggedIn(true);
+      socket.emit("setUser", { username, role });
+    }
+
+    const savedPublic = localStorage.getItem("publicMsgs");
+    const savedPrivate = localStorage.getItem("privateMsgs");
+    const savedPartner = localStorage.getItem("partner");
+
+    if (savedPublic) setPublicMsgs(JSON.parse(savedPublic));
+    if (savedPrivate) setPrivateMsgs(JSON.parse(savedPrivate));
+    if (savedPartner) setPartner(JSON.parse(savedPartner));
+  }, []);
+
+  // --- Save data when it changes ---
+  useEffect(() => {
+    localStorage.setItem("publicMsgs", JSON.stringify(publicMsgs));
+  }, [publicMsgs]);
+
+  useEffect(() => {
+    localStorage.setItem("privateMsgs", JSON.stringify(privateMsgs));
+  }, [privateMsgs]);
+
+  useEffect(() => {
+    if (partner) {
+      localStorage.setItem("partner", JSON.stringify(partner));
+    } else {
+      localStorage.removeItem("partner");
+    }
+  }, [partner]);
+
+  // --- Socket Listeners ---
+  useEffect(() => {
+    socket.on("publicMessage", (m) =>
+      setPublicMsgs((prev) => {
+        const updated = [...prev, m];
+        return updated.slice(-100); // keep last 100
+      })
+    );
+
+    socket.on("privateMessage", (m) =>
+      setPrivateMsgs((prev) => {
+        const updated = [...prev, m];
+        return updated.slice(-100);
+      })
+    );
+
     socket.on("assignedPartner", ({ partnerId, partnerName }) => {
       setPartner({ id: partnerId, name: partnerName });
     });
@@ -36,6 +100,7 @@ const Chat = () => {
     };
   }, []);
 
+  // --- Send messages ---
   const sendPublic = () => {
     if (msg.trim()) {
       socket.emit("publicMessage", msg);
@@ -50,6 +115,7 @@ const Chat = () => {
     }
   };
 
+  // --- UI ---
   if (!loggedIn) {
     return (
       <div className="auth-container">
@@ -81,6 +147,9 @@ const Chat = () => {
       <div className="sidebar">
         <div className="sidebar-header">
           {username} ({role})
+          <button className="logout-btn" onClick={logout}>
+            Logout
+          </button>
         </div>
         <div className="sidebar-user active" onClick={() => setPartner(null)}>
           🌐 Public Chat
@@ -112,7 +181,12 @@ const Chat = () => {
                 >
                   <div className="msg-user">{m.user}</div>
                   <div>{m.text}</div>
-                  <div className="msg-time">{m.time}</div>
+                  <div className="msg-time">
+                    {new Date(m.time).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </div>
                 </div>
               ))
             : privateMsgs.map((m, i) => (
@@ -124,7 +198,12 @@ const Chat = () => {
                 >
                   <div className="msg-user">{m.user}</div>
                   <div>{m.text}</div>
-                  <div className="msg-time">{m.time}</div>
+                  <div className="msg-time">
+                    {new Date(m.time).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </div>
                 </div>
               ))}
         </div>
