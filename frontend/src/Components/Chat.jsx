@@ -5,48 +5,28 @@ import "../styles/Chat.css";
 const API = import.meta.env.VITE_API_URL || "http://localhost:3000";
 const socket = io(API);
 
-const Chat = () => {
+const Chat = ({ userData }) => {
   const [username, setUsername] = useState(userData?.name || "");
   const [role, setRole] = useState("user");
   const [loggedIn, setLoggedIn] = useState(false);
+
   const [publicMsgs, setPublicMsgs] = useState([]);
   const [privateMsgs, setPrivateMsgs] = useState([]);
   const [msg, setMsg] = useState("");
   const [activeChat, setActiveChat] = useState("public");
-
   const [partner, setPartner] = useState(null);
 
-  // --- Login ---
-  const login = () => {
-    if (!username.trim()) return;
-    socket.emit("setUser", { username, role });
-    setLoggedIn(true);
-
-    // Save to localStorage
-    localStorage.setItem("chatUser", JSON.stringify({ username, role }));
-  };
-
-  const logout = () => {
-    localStorage.clear();
-    setLoggedIn(false);
-    setUsername("");
-    setRole("user");
-    setPublicMsgs([]);
-    setPrivateMsgs([]);
-    setPartner(null);
-  };
-
-  // --- Load saved data on first mount ---
+  // --- Auto-login with userData ---
   useEffect(() => {
-    const savedUser = localStorage.getItem("chatUser");
-    if (savedUser) {
-      const { username, role } = JSON.parse(savedUser);
-      setUsername(username);
-      setRole(role);
-      setLoggedIn(true);
+    if (username) {
       socket.emit("setUser", { username, role });
+      setLoggedIn(true);
+      localStorage.setItem("chatUser", JSON.stringify({ username, role }));
     }
+  }, [username, role]);
 
+  // --- Load previous messages if needed ---
+  useEffect(() => {
     const savedPublic = localStorage.getItem("publicMsgs");
     const savedPrivate = localStorage.getItem("privateMsgs");
     const savedPartner = localStorage.getItem("partner");
@@ -56,7 +36,7 @@ const Chat = () => {
     if (savedPartner) setPartner(JSON.parse(savedPartner));
   }, []);
 
-  // --- Save data when it changes ---
+  // --- Save data ---
   useEffect(() => {
     localStorage.setItem("publicMsgs", JSON.stringify(publicMsgs));
   }, [publicMsgs]);
@@ -76,17 +56,11 @@ const Chat = () => {
   // --- Socket Listeners ---
   useEffect(() => {
     socket.on("publicMessage", (m) =>
-      setPublicMsgs((prev) => {
-        const updated = [...prev, m];
-        return updated.slice(-100); // keep last 100
-      })
+      setPublicMsgs((prev) => [...prev, m].slice(-100))
     );
 
     socket.on("privateMessage", (m) =>
-      setPrivateMsgs((prev) => {
-        const updated = [...prev, m];
-        return updated.slice(-100);
-      })
+      setPrivateMsgs((prev) => [...prev, m].slice(-100))
     );
 
     socket.on("assignedPartner", ({ partnerId, partnerName }) => {
@@ -100,46 +74,17 @@ const Chat = () => {
     };
   }, []);
 
-  // --- Send messages ---
-  const sendPublic = () => {
-    if (msg.trim()) {
-      socket.emit("publicMessage", msg);
-      setMsg("");
-    }
-  };
-
-  const sendPrivate = () => {
-    if (msg.trim() && partner) {
-      socket.emit("privateMessage", { to: partner.id, text: msg });
-      setMsg("");
-    }
+  const logout = () => {
+    localStorage.clear();
+    setLoggedIn(false);
+    setPublicMsgs([]);
+    setPrivateMsgs([]);
+    setPartner(null);
+    window.location.reload(); // go back to landing page
   };
 
   // --- UI ---
-  if (!loggedIn) {
-    return (
-      <div className="auth-container">
-        <h2 className="auth-title">Login</h2>
-        <input
-          className="auth-input"
-          placeholder="Enter your name"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-        />
-        <select
-          className="auth-select"
-          value={role}
-          onChange={(e) => setRole(e.target.value)}
-        >
-          <option value="user">User</option>
-          <option value="therapist">Therapist</option>
-        </select>
-        <button className="auth-button" onClick={login}>
-          Join Chat
-        </button>
-      </div>
-    );
-  }
+  if (!loggedIn) return null; // no login UI needed anymore
 
   return (
     <div className="chat-wrapper">
@@ -170,7 +115,7 @@ const Chat = () => {
         )}
       </div>
 
-      {/* Chat Area */}
+      {/* Chat Main */}
       <div className="chat-main">
         <div className="chat-header">
           {activeChat === "private"
@@ -179,41 +124,23 @@ const Chat = () => {
         </div>
 
         <div className="chat-messages">
-          {activeChat === "public"
-            ? publicMsgs.map((m, i) => (
-                <div
-                  key={i}
-                  className={`message ${
-                    m.user === username ? "my-msg" : "other-msg"
-                  }`}
-                >
-                  <div className="msg-user">{m.user}</div>
-                  <div>{m.text}</div>
-                  <div className="msg-time">
-                    {new Date(m.time).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </div>
-                </div>
-              ))
-            : privateMsgs.map((m, i) => (
-                <div
-                  key={i}
-                  className={`message ${
-                    m.user === username ? "my-msg" : "other-msg"
-                  }`}
-                >
-                  <div className="msg-user">{m.user}</div>
-                  <div>{m.text}</div>
-                  <div className="msg-time">
-                    {new Date(m.time).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </div>
-                </div>
-              ))}
+          {(activeChat === "public" ? publicMsgs : privateMsgs).map((m, i) => (
+            <div
+              key={i}
+              className={`message ${
+                m.user === username ? "my-msg" : "other-msg"
+              }`}
+            >
+              <div className="msg-user">{m.user}</div>
+              <div>{m.text}</div>
+              <div className="msg-time">
+                {new Date(m.time).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </div>
+            </div>
+          ))}
         </div>
 
         {/* Input */}
@@ -226,7 +153,11 @@ const Chat = () => {
           />
           <button
             className="chat-send"
-            onClick={activeChat === "private" ? sendPrivate : sendPublic}
+            onClick={() =>
+              activeChat === "private"
+                ? socket.emit("privateMessage", { to: partner.id, text: msg })
+                : socket.emit("publicMessage", msg)
+            }
           >
             Send
           </button>
