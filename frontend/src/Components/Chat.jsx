@@ -13,6 +13,7 @@ const Chat = () => {
   const [publicMsgs, setPublicMsgs] = useState([]);
   const [privateMsgs, setPrivateMsgs] = useState([]);
   const [msg, setMsg] = useState("");
+  const [activeChat, setActiveChat] = useState("public");
 
   const [partner, setPartner] = useState(null);
 
@@ -151,13 +152,19 @@ const Chat = () => {
             Logout
           </button>
         </div>
-        <div className="sidebar-user active" onClick={() => setPartner(null)}>
+        <div
+          className={`sidebar-user ${activeChat === "public" ? "active" : ""}`}
+          onClick={() => setActiveChat("public")}
+        >
           🌐 Public Chat
         </div>
+
         {partner && (
           <div
-            className="sidebar-user active"
-            onClick={() => setPartner(partner)}
+            className={`sidebar-user ${
+              activeChat === "private" ? "active" : ""
+            }`}
+            onClick={() => setActiveChat("private")}
           >
             💬 {role === "user" ? "My Therapist" : partner.name}
           </div>
@@ -167,11 +174,13 @@ const Chat = () => {
       {/* Chat Area */}
       <div className="chat-main">
         <div className="chat-header">
-          {partner ? `Private Chat with ${partner.name}` : "🌐 Public Chat"}
+          {activeChat === "private"
+            ? `Private Chat with ${partner.name}`
+            : "🌐 Public Chat"}
         </div>
 
         <div className="chat-messages">
-          {!partner
+          {activeChat === "public"
             ? publicMsgs.map((m, i) => (
                 <div
                   key={i}
@@ -220,7 +229,7 @@ const Chat = () => {
           />
           <button
             className="chat-send"
-            onClick={partner ? sendPrivate : sendPublic}
+            onClick={activeChat === "private" ? sendPrivate : sendPublic}
           >
             Send
           </button>
