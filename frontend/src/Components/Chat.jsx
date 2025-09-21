@@ -6,10 +6,9 @@ const API = import.meta.env.VITE_API_URL || "http://localhost:3000";
 const socket = io(API);
 
 const Chat = () => {
-  const [username, setUsername] = useState("");
+  const [username, setUsername] = useState(userData?.name || "");
   const [role, setRole] = useState("user");
   const [loggedIn, setLoggedIn] = useState(false);
-
   const [publicMsgs, setPublicMsgs] = useState([]);
   const [privateMsgs, setPrivateMsgs] = useState([]);
   const [msg, setMsg] = useState("");
@@ -223,9 +222,7 @@ const Chat = () => {
             className="chat-input"
             value={msg}
             onChange={(e) => setMsg(e.target.value)}
-            placeholder={
-              partner ? "Type a private message..." : "Type a public message..."
-            }
+            placeholder="Type a message..."
           />
           <button
             className="chat-send"

@@ -1,11 +1,24 @@
-import React from "react";
+import React, { useState } from "react";
+import LandingPage from "./Components/LandingPage";
 import Chat from "./Components/Chat";
 
 const App = () => {
+  const [started, setStarted] = useState(false);
+  const [userData, setUserData] = useState(null);
+
+  const handleStart = ({ name, email }) => {
+    setUserData({ name, email });
+    setStarted(true);
+  };
+
   return (
-    <div>
-      <Chat />
-    </div>
+    <>
+      {!started ? (
+        <LandingPage onStart={handleStart} />
+      ) : (
+        <Chat userData={userData} />
+      )}
+    </>
   );
 };
 
