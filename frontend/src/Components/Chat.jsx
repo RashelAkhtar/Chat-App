@@ -6,9 +6,13 @@ const API = import.meta.env.VITE_API_URL || "http://localhost:3000";
 const socket = io(API);
 
 const Chat = ({ userData }) => {
-  const [username, setUsername] = useState(userData?.name || "");
-  const [role, setRole] = useState(userData?.role || "user");
-  const [loggedIn, setLoggedIn] = useState(false);
+  // Load from localStorage first, fallback to props
+  const savedUser = JSON.parse(localStorage.getItem("chatUser")) || {};
+  const [username, setUsername] = useState(
+    userData?.name || savedUser.username || ""
+  );
+  const [role, setRole] = useState(userData?.role || savedUser.role || "user");
+  const [loggedIn, setLoggedIn] = useState(!!(userData || savedUser.username));
 
   const [publicMsgs, setPublicMsgs] = useState([]);
   const [privateMsgs, setPrivateMsgs] = useState([]);
@@ -16,7 +20,7 @@ const Chat = ({ userData }) => {
   const [activeChat, setActiveChat] = useState("public");
   const [partner, setPartner] = useState(null);
 
-  // --- Auto-login with userData ---
+  // --- Initialize user session ---
   useEffect(() => {
     if (username) {
       socket.emit("setUser", { username, role });
@@ -25,7 +29,7 @@ const Chat = ({ userData }) => {
     }
   }, [username, role]);
 
-  // --- Load previous messages if needed ---
+  // --- Restore messages & partner ---
   useEffect(() => {
     const savedPublic = localStorage.getItem("publicMsgs");
     const savedPrivate = localStorage.getItem("privateMsgs");
@@ -36,7 +40,7 @@ const Chat = ({ userData }) => {
     if (savedPartner) setPartner(JSON.parse(savedPartner));
   }, []);
 
-  // --- Save data ---
+  // --- Save messages in storage ---
   useEffect(() => {
     localStorage.setItem("publicMsgs", JSON.stringify(publicMsgs));
   }, [publicMsgs]);
@@ -80,23 +84,20 @@ const Chat = ({ userData }) => {
     setPublicMsgs([]);
     setPrivateMsgs([]);
     setPartner(null);
-    window.location.reload(); // go back to landing page
+    window.location.reload();
   };
 
   // --- Send message helper ---
   const sendMessage = () => {
-    if (!msg.trim()) return; // prevent empty sends
-
+    if (!msg.trim()) return;
     if (activeChat === "private") {
       socket.emit("privateMessage", { to: partner.id, text: msg });
     } else {
       socket.emit("publicMessage", msg);
     }
-
-    setMsg(""); // clear input after send
+    setMsg("");
   };
 
-  // --- UI ---
   if (!loggedIn) return null;
 
   return (
@@ -163,12 +164,7 @@ const Chat = ({ userData }) => {
             value={msg}
             onChange={(e) => setMsg(e.target.value)}
             placeholder="Type a message..."
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                sendMessage();
-              }
-            }}
+            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
           />
           <button
             className="chat-send"
