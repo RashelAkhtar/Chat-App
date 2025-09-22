@@ -83,8 +83,21 @@ const Chat = ({ userData }) => {
     window.location.reload(); // go back to landing page
   };
 
+  // --- Send message helper ---
+  const sendMessage = () => {
+    if (!msg.trim()) return; // prevent empty sends
+
+    if (activeChat === "private") {
+      socket.emit("privateMessage", { to: partner.id, text: msg });
+    } else {
+      socket.emit("publicMessage", msg);
+    }
+
+    setMsg(""); // clear input after send
+  };
+
   // --- UI ---
-  if (!loggedIn) return null; // no login UI needed anymore
+  if (!loggedIn) return null;
 
   return (
     <div className="chat-wrapper">
@@ -150,14 +163,17 @@ const Chat = ({ userData }) => {
             value={msg}
             onChange={(e) => setMsg(e.target.value)}
             placeholder="Type a message..."
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                sendMessage();
+              }
+            }}
           />
           <button
             className="chat-send"
-            onClick={() =>
-              activeChat === "private"
-                ? socket.emit("privateMessage", { to: partner.id, text: msg })
-                : socket.emit("publicMessage", msg)
-            }
+            onClick={sendMessage}
+            disabled={!msg.trim()}
           >
             Send
           </button>

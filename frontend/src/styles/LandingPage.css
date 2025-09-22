@@ -118,6 +118,27 @@
   animation: fadeIn 1.5s ease-in-out;
 }
 
+/* Role selector */
+.landing-form select {
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  outline: none;
+  background: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  transition: border 0.2s, box-shadow 0.2s;
+}
+
+.landing-form select:hover {
+  border-color: #6c63ff;
+}
+
+.landing-form select:focus {
+  border-color: #6c63ff;
+  box-shadow: 0 0 0 2px rgba(108, 99, 255, 0.2);
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
