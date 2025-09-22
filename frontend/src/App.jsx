@@ -6,8 +6,8 @@ const App = () => {
   const [started, setStarted] = useState(false);
   const [userData, setUserData] = useState(null);
 
-  const handleStart = ({ name, email }) => {
-    setUserData({ name, email });
+  const handleStart = ({ name, email, role }) => {
+    setUserData({ name, email, role });
     setStarted(true);
   };
 

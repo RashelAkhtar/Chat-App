@@ -7,7 +7,7 @@ const socket = io(API);
 
 const Chat = ({ userData }) => {
   const [username, setUsername] = useState(userData?.name || "");
-  const [role, setRole] = useState("user");
+  const [role, setRole] = useState(userData?.role || "user");
   const [loggedIn, setLoggedIn] = useState(false);
 
   const [publicMsgs, setPublicMsgs] = useState([]);

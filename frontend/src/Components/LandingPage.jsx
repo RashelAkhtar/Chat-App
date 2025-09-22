@@ -4,11 +4,12 @@ import "../styles/LandingPage.css";
 const LandingPage = ({ onStart }) => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [role, setRole] = useState("user");
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!name.trim() || !email.trim()) return;
-    onStart({ name, email });
+    onStart({ name, email, role });
   };
 
   return (
@@ -27,6 +28,7 @@ const LandingPage = ({ onStart }) => {
       <div className="landing-right">
         <form className="landing-form" onSubmit={handleSubmit}>
           <h2>Join Maitri</h2>
+
           <input
             type="text"
             placeholder="Enter your name"
@@ -39,6 +41,13 @@ const LandingPage = ({ onStart }) => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
+
+          {/* 👇 Role selector */}
+          <select value={role} onChange={(e) => setRole(e.target.value)}>
+            <option value="user">User</option>
+            <option value="therapist">Therapist</option>
+          </select>
+
           <button type="submit">Start Chatting</button>
         </form>
 
